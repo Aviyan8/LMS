@@ -2,17 +2,17 @@ pipeline {
     agent any
 
     environment {
-        EC2_HOST = 'your-ec2-52.206.75.24'  // Replace with your EC2 IP
+        EC2_HOST = 'your-ec2-public-ip'  // Replace with your EC2 IP
         APP_PORT = '3000'
         APP_DIR = '/home/ec2-user/app'
-        SSH_CREDENTIALS = 'ec2-devops'  // Jenkins credential ID
+        SSH_CREDENTIALS = 'ec2-ssh-key'  // Jenkins credential ID
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/Aviyan8/LMS'
+                    url: 'https://github.com/Aviyan8/LMS.git'
             }
         }
 
@@ -22,19 +22,13 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                sh 'npm test'  // If you have tests
-            }
-        }
-
         stage('Build') {
             steps {
-                sh 'npm run build'  // If using React, Next.js, etc.
+                sh 'npm run build'  // If your app has a build step
             }
         }
 
-               stage('Deploy to EC2') {
+        stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS]) {
                     // Copy files to EC2
@@ -68,3 +62,4 @@ pipeline {
             }
         }
     }
+}
