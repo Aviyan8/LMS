@@ -1,19 +1,81 @@
 pipeline {
     agent any
+
+    environment {
+        EC2_HOST = 'your-ec2-52.206.75.24'  // Replace with your EC2 IP
+        APP_PORT = '3000'
+        APP_DIR = '/home/ec2-user/app'
+        SSH_CREDENTIALS = 'ec2-devops'  // Jenkins credential ID
+    }
+
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Aviyan8/LMS'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npm test'  // If you have tests
+            }
+        }
+
         stage('Build') {
             steps {
-                echo 'Building...'
+                sh 'npm run build'  // If using React, Next.js, etc.
             }
         }
-        stage('Test') {
+
+        stage('Deploy to EC2') {
             steps {
-                echo 'Testing...'
+                sshagent(credentials: [SSH_CREDENTIALS]) {
+                    // Copy files to EC2
+                    sh """
+                        rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+                        --exclude 'node_modules' \
+                        --exclude '.git' \
+                        ./ ec2-user@${EC2_HOST}:${APP_DIR}/
+                    """
+                    
+                    // SSH and restart app
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} "
+                            cd ${APP_DIR}
+                            npm install --production
+                            
+                            # Check if app is already running with PM2
+                            if pm2 list | grep -q 'app-name'; then
+                                pm2 restart app-name
+                            else
+                                # Start your app (adjust based on your entry file)
+                                pm2 start server.js --name 'lms-app' --log /var/log/pm2.log
+                            fi
+                            
+                            # Save PM2 process list
+                            pm2 save
+                            
+                            # Set PM2 to start on boot
+                            sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+                        "
+                    """
+                }
             }
-        }
-        stage('Deploy') {
-            steps {
-                echo 'Deploying...'
+            
+            post {
+                success {
+                    echo 'Deployment completed successfully!'
+                }
+                failure {
+                    echo 'Deployment failed!'
+                }
             }
         }
     }
