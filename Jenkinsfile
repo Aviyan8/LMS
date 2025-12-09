@@ -34,7 +34,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
+               stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS]) {
                     // Copy files to EC2
@@ -50,19 +50,8 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} "
                             cd ${APP_DIR}
                             npm install --production
-                            
-                            # Check if app is already running with PM2
-                            if pm2 list | grep -q 'app-name'; then
-                                pm2 restart app-name
-                            else
-                                # Start your app (adjust based on your entry file)
-                                pm2 start server.js --name 'lms-app' --log /var/log/pm2.log
-                            fi
-                            
-                            # Save PM2 process list
+                            pm2 start ecosystem.config.js
                             pm2 save
-                            
-                            # Set PM2 to start on boot
                             sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
                         "
                     """
@@ -79,4 +68,3 @@ pipeline {
             }
         }
     }
-}
