@@ -13,7 +13,20 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                echo 'Deploying...'
+                echo 'Deploying to AWS EC2...'
+                sshagent(['ec2-key']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.80.101.187 << 'EOF'
+                    cd /var/www/lms/lms-backend-singleton-master
+                    git pull origin main
+                    npm install
+                    pm2 restart lms-backend || pm2 start src/server.js --name lms-backend
+                    EOF
+                    '''
+        }
+    }
+}
+
             }
         }
     }
