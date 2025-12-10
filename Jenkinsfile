@@ -8,6 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                // Pull code from GitHub
                 git url: 'https://github.com/Aviyan8/LMS.git', branch: 'main'
             }
         }
@@ -15,26 +16,23 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building...'
+                // Optional: Add actual build commands here, e.g., npm install
+                sh 'echo "Build step completed"'
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Testing...'
+                // Optional: Run tests here, e.g., npm test
+                sh 'echo "Test step completed"'
             }
         }
 
         stage('Deploy') {
             steps {
                 echo 'Deploying to EC2...'
-                sh '''
-                ssh -i /var/lib/jenkins/keys/Jenkins.pem -o StrictHostKeyChecking=no ubuntu@3.80.101.187 << 'EOF'
-                cd /var/www/lms/lms-backend-singleton-master
-                git pull origin main
-                npm install
-                pm2 restart lms-backend || pm2 start src/server.js --name lms-backend
-                EOF
-                '''
+                
             }
         }
     }
