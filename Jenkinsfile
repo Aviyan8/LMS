@@ -67,7 +67,7 @@ pipeline {
                     cd /var/www/lms/lms-backend-singleton-master
                     git pull origin main
                     npm install
-                    pm2 restart lms-backend || pm2 start server.js --name lms-backend
+                    pm2 restart lms-backend || pm2 start src/server.js --name lms-backend
                     EOF
                     '''
                 }
