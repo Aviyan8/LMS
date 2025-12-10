@@ -30,8 +30,28 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                echo 'Deploying to EC2...'
+               steps {
+                    echo "Deploying using Docker..."
+            
+                    sh """
+                    ssh -o StrictHostKeyChecking=no -i \C:\Users\aviya\Downloads\Jenkins.pem"\jenkins.pem ubuntu@54.221.187.211  << 'EOF'
+            
+                        cd ~/lms-deploy
+            
+                        # Pull latest code from GitHub
+                        if [ ! -d ".git" ]; then
+                            git clone https://github.com/Aviyan8/LMS.git .
+                        else
+                            git pull origin main
+                        fi
+            
+                        # Build Docker image
+                        docker-compose down
+                        docker-compose build
+                        docker-compose up -d
+            
+                    EOF
+                    """
                 
             }
         }
